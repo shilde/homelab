@@ -1,0 +1,23 @@
+---
+- name: Installiere k3s master node
+  shell: curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644" sh - 
+  when: k3s_role == "master"
+
+- name: Warte auf k3s token
+  wait_for:
+    path: /var/lib/rancher/k3s/server/node-token
+    timeout: 60
+  when: k3s_role == "master"
+
+- name: Token vom Master abrufen
+  command: cat /var/lib/rancher/k3s/server/node-token
+  register: k3s_token
+  when: k3s_role == "master"
+  changed_when: false
+  delegate_to: "{{ groups['masters'][0] }}"
+  run_once: true
+
+- name: Installiere k3s Worker
+  shell: |
+    curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars[groups['masters'][0]]['ansible_host'] }}:6443 K3S_TOKEN={{ hostvars[groups['masters'][0]]['k3s_token']['stdout'] }} sh -
+  when: k3s_role == "worker"

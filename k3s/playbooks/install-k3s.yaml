@@ -1,0 +1,16 @@
+---
+- name: Install k3s master
+  hosts: masters
+  become: true
+  vars:
+    k3s_role: master
+  roles:
+    - k3s
+
+- name: Install k3s worker
+  hosts: workers
+  become: true
+  vars:
+    k3s_role: worker
+  roles:
+    - k3s
